@@ -61,9 +61,6 @@ def test_connection():
         return conn.execute(text("select 1")).scalar_one()
  
  
- 
-from database import engine, test_connection
- 
 schema_name = "third_iteration"
 metadata = MetaData(schema=schema_name)
  
