@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Student Quest</title>
-
+ 
     <style>
       body {
         margin: 0;
@@ -11,7 +11,7 @@
         background: #f5f5f5;
         color: #111;
       }
-
+ 
       .app-header {
         display: flex;
         justify-content: space-between;
@@ -23,12 +23,12 @@
         top: 0;
         z-index: 10;
       }
-
+ 
       .app-title {
         margin: 0;
         font-size: 1.4rem;
       }
-
+ 
       .auth-form {
         max-width: 600px;
         margin: 16px auto;
@@ -40,28 +40,28 @@
         flex-direction: column;
         gap: 8px;
       }
-
+ 
       .auth-form input {
         padding: 8px;
         border-radius: 4px;
         border: 1px solid #ccc;
         font: inherit;
       }
-
+ 
       .form-actions {
         display: flex;
         gap: 8px;
         justify-content: flex-end;
         margin-top: 8px;
       }
-
+ 
       .mode-buttons {
         display: flex;
         gap: 8px;
         justify-content: center;
         padding: 16px 24px;
       }
-
+ 
       .mode-button {
         padding: 10px 12px;
         border-radius: 8px;
@@ -70,12 +70,12 @@
         cursor: pointer;
         font: inherit;
       }
-
+ 
       .mode-button.active {
         border-color: #111;
         font-weight: 600;
       }
-
+ 
       .error-message {
         max-width: 600px;
         margin: 16px auto 0 auto;
@@ -85,20 +85,20 @@
         border-radius: 8px;
         color: #111;
       }
-
+ 
       .empty-message {
         padding: 16px;
         text-align: center;
         color: #555;
       }
-
+ 
       .section-list {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 16px;
         padding: 16px;
       }
-
+ 
       .section-card {
         background: #ffffff;
         border-radius: 8px;
@@ -108,26 +108,28 @@
         flex-direction: column;
         gap: 8px;
       }
-
+ 
       .section-title {
         margin: 0;
         font-size: 1.1rem;
       }
-
+ 
       .section-tagline {
         color: #555;
       }
     </style>
   </head>
-
+ 
   <body>
     <div id="root"></div>
-
+ 
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
+ 
     <script type="text/babel">
+      const API = "https://cuquest.onrender.com";
+ 
       function MyApp() {
         return (
           <div>
@@ -138,7 +140,7 @@
           </div>
         );
       }
-
+ 
       function StudentQuest() {
         const [domains,setDomains] = React.useState([]);
         const [selectedDomain, setSelectedDomain] = React.useState(null);
@@ -150,9 +152,9 @@
         const [selectedCategory, setSelectedCategory] = React.useState(null);
         const [posts,setPosts] = React.useState([]);
         const [selectedPost, setSelectedPost] = React.useState(null);
-
+ 
         const [formOpen, setFormOpen] = React.useState(true);
-
+ 
         const [formData, setFormData] = React.useState({
           email: "",
           password: "",
@@ -160,13 +162,13 @@
           first_name: "",
           last_name: "",
         });
-
-
+ 
+ 
         React.useEffect(function (){
           const savedToken = localStorage.getItem("studentquest_token");
           if (!savedToken) return;
-
-          fetch("http://localhost:8000/me?token=" + savedToken)
+ 
+          fetch(API + "/me?token=" + savedToken)
             .then(function (response) {
               return response.json();
             })
@@ -180,12 +182,12 @@
               }
             });
           }, []);
-
+ 
         React.useEffect(function () {
           if (!user) return;
-
+ 
   
-          fetch("http://localhost:8000/domains")
+          fetch(API + "/domains")
             .then(function (response) {
               return response.json();
             })
@@ -193,7 +195,7 @@
               setDomains(data.domains || []);
             });
         }, [user]);
-
+ 
         React.useEffect(function () {
           if(!selectedDomain){
             setCategories([]);
@@ -201,21 +203,21 @@
             setSelectedCategory(null);
             return;
           }
-          fetch("http://localhost:8000/categories?domain_id=" + selectedDomain.domain_id)
+          fetch(API + "/categories?domain_id=" + selectedDomain.domain_id)
             .then(function (response) {
               return response.json();
             })
             .then(function (data) {
               setCategories(data.categories || []);
             });
-
+ 
           // now for the posts
-
-          let url = "http://localhost:8000/posts?domain_id=" + selectedDomain.domain_id;
+ 
+          let url = API + "/posts?domain_id=" + selectedDomain.domain_id;
           if (selectedCategory) {
             url += "&category_id=" + selectedCategory.category_id;
           }
-
+ 
           fetch(url)
             .then(function (response) {
               return response.json();
@@ -224,17 +226,17 @@
               setPosts(data.posts || []);
             });
         }, [selectedDomain, selectedCategory]);
-
+ 
     
         function handleOpenForm() {
           setFormOpen(true);
           setError("");
         }
-
+ 
         function handleCancelForm() {
           setFormOpen(false);
           setError("");
-
+ 
           setFormData({
             email: "",
             password: "",
@@ -243,11 +245,11 @@
             last_name: "",
           });
         }
-
+ 
         function handleSwitchMode(nextMode) {
           setMode(nextMode);
           setError("");
-
+ 
           setFormData({
             email: "",
             password: "",
@@ -255,10 +257,10 @@
             first_name: "",
             last_name: "",
           });
-
+ 
           setFormOpen(true);
         }
-
+ 
         function handleChange(event) {
           const nextFormData = {
             ...formData,
@@ -266,35 +268,35 @@
           };
           setFormData(nextFormData);
         }
-
+ 
         function handleSubmit(event) {
           event.preventDefault();
           setError("");
-
+ 
           const cleanEmail = formData.email.trim().toLowerCase();
-
+ 
           if (!cleanEmail || !formData.password) {
             setError("Email and password are required.");
             return;
           }
-
+ 
           if (mode === "register") {
             if (!formData.first_name.trim() || !formData.last_name.trim()) {
               setError("First and last name are required.");
               return;
             }
-
+ 
             if (formData.password.length < 6) {
               setError("Password must be at least 6 characters.");
               return;
             }
-
+ 
             if (formData.password !== formData.confirmPassword) {
               setError("Passwords do not match.");
               return;
             }
           }
-
+ 
           const payload = mode == "login" ? {
             email: cleanEmail,
             password: formData.password,
@@ -304,10 +306,10 @@
             first_name: formData.first_name.trim(),
             last_name: formData.last_name.trim(),
           };
-
+ 
           const endpoint = mode === "login" ? "login" : "register";
-
-          fetch("http://localhost:8000/" + endpoint, {
+ 
+          fetch(API + "/" + endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -320,11 +322,11 @@
                 setError(data.error);
                 return;
               }
-
+ 
               setToken(data.token);
               setUser(data.user);
               localStorage.setItem("studentquest_token", data.token);
-
+ 
               setFormData({
                 email: "",
                 password: "",
@@ -332,13 +334,13 @@
                 first_name: "",
                 last_name: "",
               });
-
+ 
               setFormOpen(false);
             });
         }
-
+ 
         function handleLogout() {
-          fetch("http://localhost:8000/logout", {
+          fetch(API + "/logout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: token }),
@@ -355,7 +357,7 @@
               setFormOpen(true);
               setSelectedDomain(null);
               setCategories([]);
-
+ 
               setFormData({
                 email: "",
                 password: "",
@@ -365,7 +367,7 @@
               });
             });
         }
-
+ 
         return (
           <div>
             {user ? (
@@ -375,11 +377,11 @@
                     Logout
                   </button>
                 </div>
-
+ 
                 {!selectedDomain ? (
                   <div style={{ padding: "0 16px 16px 16px" }}>
                     <h2 style={{ marginTop: 0 }}> Select </h2>
-
+ 
                     <div className="section-list">
                       {domains.map(function (domain) {
                         return (
@@ -411,11 +413,11 @@
                         Home
                         </button>
                       </div>
-
+ 
                       <h2 style= {{marginTop: 0, texTransform: "capitalize"}} >
                         {selectedDomain.domain_name}
                       </h2>
-
+ 
                       <div
                         style={{
                           display: "grid",
@@ -432,7 +434,7 @@
                           }}
                         >
                         <h3 style={{ marginTop: 0 }}>Categories</h3>
-
+ 
                         <button
                           className="mode-button"
                           style={{ width: "100%", marginBottom: "10px" }}
@@ -442,7 +444,7 @@
                         >
                           All categories
                         </button>
-
+ 
                         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                           {categories.map(function (category) {
                             return (
@@ -459,14 +461,14 @@
                           })}
                         </div>
                       </aside>
-
+ 
                       <main>
                         <h3 style={{ marginTop: 0 }}>
                           {selectedCategory
                             ? selectedCategory.name + " posts"
                             : "All " + selectedDomain.domain_name + " posts"}
                         </h3>
-
+ 
                         {posts.length === 0 ? (
                           <div className="empty-message">No posts found.</div>
                         ) : (
@@ -509,7 +511,7 @@
                   >
                     Login
                   </button>
-
+ 
                   <button
                     className={"mode-button " + (mode === "register" ? "active" : "")}
                     onClick={function () {
@@ -519,9 +521,9 @@
                     Register
                   </button>
                 </div>
-
+ 
                 {error ? <div className="error-message">{error}</div> : null}
-
+ 
                 {formOpen && (
                   <AuthForm
                     mode={mode}
@@ -531,7 +533,7 @@
                     onSubmit={handleSubmit}
                   />
                 )}
-
+ 
                 {!formOpen ? (
                   <div className="empty-message">
                     Click Login/Register above to continue.
@@ -542,7 +544,7 @@
           </div>
         );
       }
-
+ 
       function AuthForm(props) {
         return (
           <form className="auth-form" onSubmit={props.onSubmit}>
@@ -552,7 +554,7 @@
               value={props.formData.email}
               onChange={props.onChange}
             />
-
+ 
     
             {props.mode === "register" ? (
               <input
@@ -562,7 +564,7 @@
                 onChange={props.onChange}
               />
             ) : null}
-
+ 
             {props.mode === "register" ? (
               <input
                 name="last_name"
@@ -571,7 +573,7 @@
                 onChange={props.onChange}
               />
             ) : null}
-
+ 
             <input
               name="password"
               placeholder="Password"
@@ -579,8 +581,8 @@
               value={props.formData.password}
               onChange={props.onChange}
             />
-
-
+ 
+ 
             {props.mode === "register" ? (
               <input
                 name="confirmPassword"
@@ -590,9 +592,9 @@
                 onChange={props.onChange}
               />
             ) : null}
-
+ 
             
-
+ 
             <div className="form-actions">
               <button type="button" onClick={props.onCancel}>
                 Cancel
@@ -604,7 +606,7 @@
           </form>
         );
       }
-
+ 
       function SectionCard(props) {
         return (
           <article className="section-card" onClick={props.onClick}>
@@ -613,7 +615,7 @@
           </article>
         );
       }
-
+ 
       const container = document.getElementById("root");
       const root = ReactDOM.createRoot(container);
       root.render(<MyApp />);
