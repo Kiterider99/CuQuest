@@ -61,7 +61,7 @@ def test_connection():
 
 
 
-from database import engine, test_connection
+
 
 schema_name = "third_iteration"
 metadata = MetaData(schema=schema_name)
