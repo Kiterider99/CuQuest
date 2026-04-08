@@ -31,7 +31,7 @@ engine = create_engine(
     connect_args={"options": "-csearch_path=third_iteration"}
 ) #this is what fastapi talks to
 
-sessionlocal = sessionmaker(autocommit=False, autoflash=False, bind=engine)
+sessionlocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # each api request gets its own database session
 
 def test_connection():
