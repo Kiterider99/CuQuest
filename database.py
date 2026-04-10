@@ -20,16 +20,14 @@ if not all([db, user, pw]):
     raise RuntimeError("missing pw, db, user")
 
 database_url = (
-    
     f"postgresql+psycopg2://{user}:{quote_plus(pw)}@{host}:{port}/{quote_plus(db)}"
-
 )
 
 engine = create_engine(
-    database_url, 
+    database_url,
     pool_pre_ping=True,
     connect_args={"options": "-csearch_path=third_iteration"}
-) #this is what fastapi talks to
+)  # this is what fastapi talks to
 
 sessionlocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # each api request gets its own database session
