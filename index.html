@@ -515,7 +515,7 @@
         React.useEffect(function () {
           const savedToken = localStorage.getItem("studentquest_token");
           if (!savedToken) return;
-          fetch("http://localhost:8000/me?token=" + savedToken)
+          fetch("https://cuquest.onrender.com/me?token=" + savedToken)
             .then(function (r) { return r.json(); })
             .then(function (data) {
               if (data.error) {
@@ -530,7 +530,7 @@
 
         React.useEffect(function () {
           if (!user) return;
-          fetch("http://localhost:8000/domains")
+          fetch("https://cuquest.onrender.com/domains")
             .then(function (r) { return r.json(); })
             .then(function (data) { setDomains(data.domains || []); });
         }, [user]);
@@ -542,14 +542,14 @@
             setSelectedCategory(null);
             return;
           }
-          fetch("http://localhost:8000/categories?domain_id=" + selectedDomain.domain_id)
+          fetch("https://cuquest.onrender.com/categories?domain_id=" + selectedDomain.domain_id)
             .then(function (r) { return r.json(); })
             .then(function (data) { setCategories(data.categories || []); });
         }, [selectedDomain]);
 
         React.useEffect(function () {
           if (!selectedDomain) return;
-          var url = "http://localhost:8000/posts?domain_id=" + selectedDomain.domain_id;
+          var url = "https://cuquest.onrender.com/posts?domain_id=" + selectedDomain.domain_id;
           if (selectedCategory) url += "&category_id=" + selectedCategory.category_id;
           fetch(url)
             .then(function (r) { return r.json(); })
@@ -595,7 +595,7 @@
           const payload = mode === "login"
             ? { email: cleanEmail, password: formData.password }
             : { email: cleanEmail, password: formData.password, first_name: formData.first_name.trim(), last_name: formData.last_name.trim() };
-          fetch("http://localhost:8000/" + (mode === "login" ? "login" : "register"), {
+          fetch("https://cuquest.onrender.com/" + (mode === "login" ? "login" : "register"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -612,7 +612,7 @@
         }
 
         function handleLogout() {
-          fetch("http://localhost:8000/logout", {
+          fetch("https://cuquest.onrender.com/logout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: token }),
@@ -634,7 +634,7 @@
         // ── Profile handlers ──────────────────────────────────
 
         function handleOpenProfile() {
-          fetch("http://localhost:8000/users/" + user.user_id + "/posts")
+          fetch("https://cuquest.onrender.com/users/" + user.user_id + "/posts")
             .then(function (r) { return r.json(); })
             .then(function (data) { setUserPosts(data.posts || []); })
             .catch(function () { setUserPosts([]); });
@@ -649,7 +649,7 @@
         }
 
         function handleDeletePost(post_id, onSuccess) {
-          fetch("http://localhost:8000/posts/" + post_id, {
+          fetch("https://cuquest.onrender.com/posts/" + post_id, {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: token }),
@@ -683,7 +683,7 @@
             desired_payout: createPostData.desired_payout !== "" ? parseFloat(createPostData.desired_payout) : null,
             expires_at: createPostData.expires_at !== "" ? new Date(createPostData.expires_at).toISOString() : null,
           };
-          fetch("http://localhost:8000/posts", {
+          fetch("https://cuquest.onrender.com/posts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
