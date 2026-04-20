@@ -732,10 +732,8 @@
             {/* Header */}
             <header className="app-header">
               <h1 className="app-title">Student Quest</h1>
-              {user ? (
-                <div className="header-actions">
 
-                  {/* START*/}
+              {/* START*/}
 
 <div style={{marginBottom: "1rem"}}>
     <input
@@ -771,6 +769,9 @@
 )}
 
              {/* END  */}
+              
+              {user ? (
+                <div className="header-actions">
                   
                   <button
                     className={"mode-button" + (showProfile ? " active" : "")}
