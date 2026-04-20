@@ -568,13 +568,11 @@
           setFormOpen(true);
         }
 
-        function handleSearch(e) {
-        e.preventDefault();
-          if (!searchQuery.trim()) { setSearchResults(null); return; }
+        function handleSearch() {
           fetch("https://cuquest.onrender.com/search?q=" + encodeURIComponent(searchQuery))
             .then(function(r) { return r.json(); })
             .then(function(data) { setSearchResults(data); });
-        }
+}
 
         function handleChange(event) {
           setFormData({ ...formData, [event.target.name]: event.target.value });
