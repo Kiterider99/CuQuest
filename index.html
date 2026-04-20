@@ -733,38 +733,47 @@
 
               {/* START*/}
 
-<div style={{marginBottom: "1rem"}}>
-    <input
-        type="text"
-        placeholder="Search posts, users, categories..."
-        value={searchQuery}
-        onChange={function(e) { setSearchQuery(e.target.value); setSearchResults(null); }}
-        onKeyDown={function(e) { if (e.key === "Enter") handleSearch(e); }}
-        style={{padding: "8px", width: "70%", marginRight: "8px"}}
-    />
-    <button onClick={handleSearch}>Search</button>
-</div>
-{searchResults && (
-    <div>
-        <h3>Posts ({searchResults.posts.length})</h3>
-        {searchResults.posts.map(function(p) {
-            return <div key={p.post_id} style={{borderBottom: "1px solid #ccc", padding: "8px"}}>
-                <strong>{p.title}</strong> — {p.category_name} — {p.status}
-                <p>{p.description}</p>
-            </div>;
-        })}
-        <h3>Users ({searchResults.users.length})</h3>
-        {searchResults.users.map(function(u) {
-            return <div key={u.user_id} style={{padding: "4px"}}>
-                {u.first_name} {u.last_name} ({u.email})
-            </div>;
-        })}
-        <h3>Categories ({searchResults.categories.length})</h3>
-        {searchResults.categories.map(function(c) {
-            return <div key={c.category_id} style={{padding: "4px"}}>{c.name}</div>;
-        })}
-    </div>
-)}
+{/* Search bar - sits centered in header */}
+            <div style={{display: "flex", alignItems: "center", gap: "8px", flex: 1, maxWidth: "400px", margin: "0 24px"}}>
+                <input
+                    type="text"
+                    placeholder="Search posts, users, categories..."
+                    value={searchQuery}
+                    onChange={function(e) { setSearchQuery(e.target.value); setSearchResults(null); }}
+                    onKeyDown={function(e) { if (e.key === "Enter") handleSearch(); }}
+                    style={{flex: 1, padding: "8px 12px", fontSize: "14px", borderRadius: "6px", border: "1px solid #ddd", height: "36px", boxSizing: "border-box"}}
+                />
+                <button
+                    onClick={handleSearch}
+                    style={{padding: "8px 16px", height: "36px", fontSize: "14px", borderRadius: "6px", border: "1px solid #ddd", cursor: "pointer", whiteSpace: "nowrap"}}
+                >
+                    Search
+                </button>
+            </div>
+            </header>
+
+            {/* Search results - below header */}
+            {searchResults && (
+                <div style={{padding: "16px", borderBottom: "1px solid #eee"}}>
+                    <h3 style={{margin: "0 0 8px"}}>Posts ({searchResults.posts.length})</h3>
+                    {searchResults.posts.map(function(p) {
+                        return <div key={p.post_id} style={{borderBottom: "1px solid #eee", padding: "8px 0"}}>
+                            <strong>{p.title}</strong> — {p.category_name} — {p.status}
+                            <p style={{margin: "4px 0 0", color: "#666", fontSize: "14px"}}>{p.description}</p>
+                        </div>;
+                    })}
+                    <h3 style={{margin: "16px 0 8px"}}>Users ({searchResults.users.length})</h3>
+                    {searchResults.users.map(function(u) {
+                        return <div key={u.user_id} style={{padding: "4px 0"}}>
+                            {u.first_name} {u.last_name} <span style={{color: "#888", fontSize: "13px"}}>({u.email})</span>
+                        </div>;
+                    })}
+                    <h3 style={{margin: "16px 0 8px"}}>Categories ({searchResults.categories.length})</h3>
+                    {searchResults.categories.map(function(c) {
+                        return <div key={c.category_id} style={{padding: "4px 0"}}>{c.name}</div>;
+                    })}
+                </div>
+            )}
 
              {/* END  */}
               
