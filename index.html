@@ -733,7 +733,7 @@
 
               {/* START*/}
 
-{/* Search bar - sits centered in header */}
+            {/* Search bar - sits centered in header */}
             <div style={{display: "flex", alignItems: "center", gap: "8px", flex: 1, maxWidth: "400px", margin: "0 24px"}}>
                 <input
                     type="text"
@@ -750,6 +750,20 @@
                     Search
                 </button>
             </div>
+              
+           {user ? (
+                <div className="header-actions">
+                  <button
+                    className={"mode-button" + (showProfile ? " active" : "")}
+                    onClick={showProfile ? function () { setShowProfile(false); } : handleOpenProfile}
+                  >
+                    Profile
+                  </button>
+                  <button className="mode-button" onClick={handleLogout}>
+                    Logout
+                  </button>
+                </div>
+              ) : null}
             </header>
 
             {/* Search results - below header */}
@@ -774,24 +788,6 @@
                     })}
                 </div>
             )}
-
-             {/* END  */}
-              
-              {user ? (
-                <div className="header-actions">
-                  
-                  <button
-                    className={"mode-button" + (showProfile ? " active" : "")}
-                    onClick={showProfile ? function () { setShowProfile(false); } : handleOpenProfile}
-                  >
-                    Profile
-                  </button>
-                  <button className="mode-button" onClick={handleLogout}>
-                    Logout
-                  </button>
-                </div>
-              ) : null}
-            </header>
 
             {user ? (
               <div className="page-content">
