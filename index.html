@@ -733,6 +733,40 @@
             <header className="app-header">
               <h1 className="app-title">Student Quest</h1>
               {user ? (
+
+              <input
+        type="text"
+        placeholder="Search posts, users, categories..."
+        value={searchQuery}
+        onChange={function(e) { setSearchQuery(e.target.value); setSearchResults(null); }}
+        onKeyDown={function(e) { if (e.key === "Enter") handleSearch(e); }}
+        style={{padding: "8px", width: "70%", marginRight: "8px"}}
+    />
+    <button onClick={handleSearch}>Search</button>
+</div>
+
+{searchResults && (
+    <div>
+        <h3>Posts ({searchResults.posts.length})</h3>
+        {searchResults.posts.map(function(p) {
+            return <div key={p.post_id} style={{borderBottom: "1px solid #ccc", padding: "8px"}}>
+                <strong>{p.title}</strong> — {p.category_name} — {p.status}
+                <p>{p.description}</p>
+            </div>;
+        })}
+        <h3>Users ({searchResults.users.length})</h3>
+        {searchResults.users.map(function(u) {
+            return <div key={u.user_id} style={{padding: "4px"}}>
+                {u.first_name} {u.last_name} ({u.email})
+            </div>;
+        })}
+        <h3>Categories ({searchResults.categories.length})</h3>
+        {searchResults.categories.map(function(c) {
+            return <div key={c.category_id} style={{padding: "4px"}}>{c.name}</div>;
+        })}
+    </div>
+)}
+            
                 <div className="header-actions">
                   <button
                     className={"mode-button" + (showProfile ? " active" : "")}
@@ -827,39 +861,7 @@
                       </aside>
 
                       <div style={{marginBottom: "1rem"}}>
-    <input
-        type="text"
-        placeholder="Search posts, users, categories..."
-        value={searchQuery}
-        onChange={function(e) { setSearchQuery(e.target.value); setSearchResults(null); }}
-        onKeyDown={function(e) { if (e.key === "Enter") handleSearch(e); }}
-        style={{padding: "8px", width: "70%", marginRight: "8px"}}
-    />
-    <button onClick={handleSearch}>Search</button>
-</div>
-
-{searchResults && (
-    <div>
-        <h3>Posts ({searchResults.posts.length})</h3>
-        {searchResults.posts.map(function(p) {
-            return <div key={p.post_id} style={{borderBottom: "1px solid #ccc", padding: "8px"}}>
-                <strong>{p.title}</strong> — {p.category_name} — {p.status}
-                <p>{p.description}</p>
-            </div>;
-        })}
-        <h3>Users ({searchResults.users.length})</h3>
-        {searchResults.users.map(function(u) {
-            return <div key={u.user_id} style={{padding: "4px"}}>
-                {u.first_name} {u.last_name} ({u.email})
-            </div>;
-        })}
-        <h3>Categories ({searchResults.categories.length})</h3>
-        {searchResults.categories.map(function(c) {
-            return <div key={c.category_id} style={{padding: "4px"}}>{c.name}</div>;
-        })}
-    </div>
-)}
-
+  
                       {/* Posts area */}
                       <main className="posts-area">
                         <h3>
