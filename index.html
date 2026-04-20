@@ -485,8 +485,6 @@
 
       function StudentQuest() {
         const [user, setUser] = React.useState(null);
-        const [searchQuery, setSearchQuery] = React.useState("");
-        const [searchResults, setSearchResults] = React.useState(null);
         const [token, setToken] = React.useState("");
         const [mode, setMode] = React.useState("login");
         const [error, setError] = React.useState("");
@@ -511,6 +509,8 @@
         const [createPostData, setCreatePostData] = React.useState({
           title: "", description: "", desired_payout: "", expires_at: "",
         });
+        const [searchQuery, setSearchQuery] = React.useState("");
+        const [searchResults, setSearchResults] = React.useState(null);
 
         // ── Effects ──────────────────────────────────────────
 
@@ -569,7 +569,7 @@
         }
 
         function handleSearch(e) {
-          e.preventDefault();
+        e.preventDefault();
           if (!searchQuery.trim()) { setSearchResults(null); return; }
           fetch("https://cuquest.onrender.com/search?q=" + encodeURIComponent(searchQuery))
             .then(function(r) { return r.json(); })
@@ -733,8 +733,11 @@
             <header className="app-header">
               <h1 className="app-title">Student Quest</h1>
               {user ? (
+                <div className="header-actions">
 
-              <input
+                  {/* SEARCH  Start */|
+<div style={{marginBottom: "1rem"}}>
+    <input
         type="text"
         placeholder="Search posts, users, categories..."
         value={searchQuery}
@@ -766,8 +769,8 @@
         })}
     </div>
 )}
-            
-                <div className="header-actions">
+                  {/* SEARCH END*/}
+                  
                   <button
                     className={"mode-button" + (showProfile ? " active" : "")}
                     onClick={showProfile ? function () { setShowProfile(false); } : handleOpenProfile}
@@ -860,8 +863,6 @@
                         })}
                       </aside>
 
-                      <div style={{marginBottom: "1rem"}}>
-  
                       {/* Posts area */}
                       <main className="posts-area">
                         <h3>
