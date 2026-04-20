@@ -734,26 +734,8 @@
               <h1 className="app-title">Student Quest</h1>
               {user ? (
                 <div className="header-actions">
-                  <button
-                    className={"mode-button" + (showProfile ? " active" : "")}
-                    onClick={showProfile ? function () { setShowProfile(false); } : handleOpenProfile}
-                  >
-                    Profile
-                  </button>
-                  <button className="mode-button" onClick={handleLogout}>
-                    Logout
-                  </button>
-                </div>
-              ) : null}
-            </header>
 
-            {user ? (
-              <div className="page-content">
-
-
-
-
-                {/* START*/}
+                  {/* START*/}
 
 <div style={{marginBottom: "1rem"}}>
     <input
@@ -788,7 +770,23 @@
     </div>
 )}
 
-             {/* END  */} 
+             {/* END  */}
+                  
+                  <button
+                    className={"mode-button" + (showProfile ? " active" : "")}
+                    onClick={showProfile ? function () { setShowProfile(false); } : handleOpenProfile}
+                  >
+                    Profile
+                  </button>
+                  <button className="mode-button" onClick={handleLogout}>
+                    Logout
+                  </button>
+                </div>
+              ) : null}
+            </header>
+
+            {user ? (
+              <div className="page-content">
 
                 {/* ── Profile view ── */}
                 {showProfile ? (
