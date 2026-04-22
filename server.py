@@ -653,7 +653,7 @@ db = AppDB()
 
 @app.get("/")
 def root():
-    return {"message": "StudentQuest backend is running."}
+    return {"index.html"}
 
 
 @app.get("/health/db")
