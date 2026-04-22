@@ -729,53 +729,94 @@
 
             {/* Header */}
             <header className="app-header">
-              <h1 className="app-title">
-                <img                      // New Addition (4/14)
-                  src="logo.jpeg"
-                  alt="SQ logo"
-                  onClick={goHome}
-                  style={{
-                    height: "36px",
-                    width: "auto",
-                    marginRight: "8px",
-                    borderRadius: "6px",
-                    verticalAlign: "middle",
-                    cursor: "pointer"
-                  }}
-              {/* START*/}
-
-            {/* Search bar  */}
-            <div style={{display: "flex", alignItems: "center", gap: "8px", flex: 1, maxWidth: "400px", margin: "0 24px"}}>
+            {/* Logo / Title */}
+            <h1 className="app-title">
+              <img
+                src="logo.jpeg"
+                alt="SQ logo"
+                onClick={goHome}
+                style={{
+                  height: "36px",
+                  width: "auto",
+                  marginRight: "8px",
+                  borderRadius: "6px",
+                  verticalAlign: "middle",
+                  cursor: "pointer"
+                }}
+              />
+            </h1>
+          
+            {/* Search bar (only show when logged in) */}
+            {user ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  flex: 1,
+                  maxWidth: "400px",
+                  margin: "0 24px"
+                }}
+              >
                 <input
-                    type="text"
-                    placeholder="Search posts, users, categories..."
-                    value={searchQuery}
-                    onChange={function(e) { setSearchQuery(e.target.value); setSearchResults(null); }}
-                    onKeyDown={function(e) { if (e.key === "Enter") handleSearch(); }}
-                    style={{flex: 1, padding: "8px 12px", fontSize: "14px", borderRadius: "6px", border: "1px solid #ddd", height: "36px", boxSizing: "border-box"}}
+                  type="text"
+                  placeholder="Search posts, users, categories..."
+                  value={searchQuery}
+                  onChange={function (e) {
+                    setSearchQuery(e.target.value);
+                    setSearchResults(null);
+                  }}
+                  onKeyDown={function (e) {
+                    if (e.key === "Enter") handleSearch();
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    fontSize: "14px",
+                    borderRadius: "6px",
+                    border: "1px solid #ddd",
+                    height: "36px",
+                    boxSizing: "border-box"
+                  }}
                 />
                 <button
-                    onClick={handleSearch}
-                    style={{padding: "8px 16px", height: "36px", fontSize: "14px", borderRadius: "6px", border: "1px solid #ddd", cursor: "pointer", whiteSpace: "nowrap"}}
+                  onClick={handleSearch}
+                  style={{
+                    padding: "8px 16px",
+                    height: "36px",
+                    fontSize: "14px",
+                    borderRadius: "6px",
+                    border: "1px solid #ddd",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap"
+                  }}
                 >
-                    Search
+                  Search
                 </button>
-            </div>
-              
-           {user ? (
-                <div className="header-actions">
-                  <button
-                    className={"mode-button" + (showProfile ? " active" : "")}
-                    onClick={showProfile ? function () { setShowProfile(false); } : handleOpenProfile}
-                  >
-                    Profile
-                  </button>
-                  <button className="mode-button" onClick={handleLogout}>
-                    Logout
-                  </button>
-                </div>
-              ) : null}
-            </header>
+              </div>
+            ) : null}
+          
+            {/* Right-side actions */}
+            {user ? (
+              <div className="header-actions">
+                <button
+                  className={"mode-button" + (showProfile ? " active" : "")}
+                  onClick={
+                    showProfile
+                      ? function () {
+                          setShowProfile(false);
+                        }
+                      : handleOpenProfile
+                  }
+                >
+                  Profile
+                </button>
+                <button className="mode-button" onClick={handleLogout}>
+                  Logout
+                </button>
+              </div>
+            ) : null}
+          </header>  
 
             {/* Search results */}
             {searchResults && (
