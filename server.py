@@ -1,7 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import (
     Column,
@@ -655,7 +653,7 @@ db = AppDB()
 
 @app.get("/")
 def root():
-    return FileResponse("index.html")
+    return {"message": "StudentQuest backend is running."}
 
 
 @app.get("/health/db")
@@ -730,6 +728,7 @@ def create_message(payload: MessageCreate):
 def create_rating(payload: RatingCreate):
     return db.create_rating(payload)
 
+
 @app.get("/messages")
 def get_messages(token: str):
     return db.get_messages(token)
@@ -744,9 +743,11 @@ def get_message_thread(token: str, other_user_id: int):
 def get_user_posts(user_id: int):
     return {"posts": db.get_user_posts(user_id)}
 
+
 @app.get("/search")
 def search(q: str):
     return db.search(q)
+
 
 class DeletePostRequest(BaseModel):
     token: str
