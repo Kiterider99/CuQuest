@@ -188,6 +188,9 @@ CREATE INDEX IF NOT EXISTS idx_post_images_post_id ON post_images(post_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_ratings_post_rater
 ON ratings(post_id, rater_user_id);
 
+ALTER TABLE third_iteration.messages DROP COLUMN IF EXISTS request_id;
+ALTER TABLE third_iteration.messages DROP COLUMN IF EXISTS is_read;
+
 -- canonical domain rows
 INSERT INTO domains (domain_id, domain_name) VALUES
     (1, 'services'),
