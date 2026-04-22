@@ -464,6 +464,67 @@ class AppDB:
             },
         }
 
+    def get_messages(self, token, other_user_id=None):
+        user, error = self.require_user(token)
+        if error is not None:
+            return error
+        uid = user["user_id"]
+        if other_user_id is not None:
+            with self.engine.connect() as conn:
+                rows = conn.execute(
+                    select(messages_table)
+                    .where(
+                        (
+                            (messages_table.c.sender_user_id == uid) &
+                            (messages_table.c.receiver_user_id == other_user_id)
+                        ) |
+                        (
+                            (messages_table.c.sender_user_id == other_user_id) &
+                            (messages_table.c.receiver_user_id == uid)
+                        )
+                    )
+                    .order_by(messages_table.c.sent_at.asc())
+                ).fetchall()
+            return {
+                "thread": [
+                    {
+                        "message_id": row.message_id,
+                        "sender_user_id": row.sender_user_id,
+                        "receiver_user_id": row.receiver_user_id,
+                        "content": row.content,
+                        "sent_at": row.sent_at,
+                        "is_read": bool(row.is_read),
+                    }
+                    for row in rows
+                ]
+            }
+        with self.engine.connect() as conn:
+            rows = conn.execute(
+                select(messages_table)
+                .where(
+                    (messages_table.c.sender_user_id == uid) |
+                    (messages_table.c.receiver_user_id == uid)
+                )
+                .order_by(messages_table.c.sent_at.desc())
+            ).fetchall()
+        seen = {}
+        for row in rows:
+            other_id = row.receiver_user_id if row.sender_user_id == uid else row.sender_user_id
+            if other_id not in seen:
+                seen[other_id] = row
+        conversations = []
+        for other_id, row in seen.items():
+            other_user = self.get_user_by_id(other_id)
+            if other_user:
+                conversations.append({
+                    "other_user_id": other_id,
+                    "first_name": other_user["first_name"],
+                    "last_name": other_user["last_name"],
+                    "last_message": row.content,
+                    "last_sent_at": row.sent_at,
+                })
+        return {"conversations": conversations}
+
     def delete_post(self, post_id, token):
         user, error = self.require_user(token)
         if error is not None:
@@ -517,6 +578,66 @@ class AppDB:
                 "comment": (payload.comment or "").strip() or None,
                 "created_at": created_at,
             },
+        }
+
+    def search(self, query: str):
+        clean_query = (query or "").strip().lower()
+        if clean_query == "":
+            return {"posts": [], "users": [], "categories": []}
+
+        q = f"%{clean_query}%"
+
+        with self.engine.connect() as conn:
+            post_rows = conn.execute(
+                select(posts_table.c.post_id)
+                .select_from(
+                    posts_table.join(
+                        categories_table,
+                        posts_table.c.category_id == categories_table.c.category_id,
+                    )
+                )
+                .where(
+                    func.lower(posts_table.c.title).like(q) |
+                    func.lower(posts_table.c.description).like(q) |
+                    func.lower(categories_table.c.name).like(q)
+                )
+                .order_by(posts_table.c.created_at.desc(), posts_table.c.post_id.desc())
+                .limit(10)
+            ).fetchall()
+
+            user_rows = conn.execute(
+                select(users_table)
+                .where(
+                    func.lower(users_table.c.first_name).like(q) |
+                    func.lower(users_table.c.last_name).like(q) |
+                    func.lower(users_table.c.email).like(q)
+                )
+                .order_by(users_table.c.user_id.desc())
+                .limit(10)
+            ).fetchall()
+
+            category_rows = conn.execute(
+                select(categories_table)
+                .where(func.lower(categories_table.c.name).like(q))
+                .order_by(categories_table.c.category_id.asc())
+                .limit(10)
+            ).fetchall()
+
+        posts = [self.get_post_details(row.post_id) for row in post_rows]
+        users = [self.user_to_dict(row) for row in user_rows]
+        categories = [
+            {
+                "category_id": row.category_id,
+                "domain_id": row.domain_id,
+                "name": row.name,
+            }
+            for row in category_rows
+        ]
+
+        return {
+            "posts": posts,
+            "users": users,
+            "categories": categories,
         }
 
 
@@ -609,11 +730,23 @@ def create_message(payload: MessageCreate):
 def create_rating(payload: RatingCreate):
     return db.create_rating(payload)
 
+@app.get("/messages")
+def get_messages(token: str):
+    return db.get_messages(token)
+
+
+@app.get("/messages/thread")
+def get_message_thread(token: str, other_user_id: int):
+    return db.get_messages(token, other_user_id=other_user_id)
+
 
 @app.get("/users/{user_id}/posts")
 def get_user_posts(user_id: int):
     return {"posts": db.get_user_posts(user_id)}
 
+@app.get("/search")
+def search(q: str):
+    return db.search(q)
 
 class DeletePostRequest(BaseModel):
     token: str
