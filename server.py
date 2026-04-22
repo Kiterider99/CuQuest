@@ -655,7 +655,7 @@ db = AppDB()
 
 @app.get("/")
 def root():
-    return FileResponse("index.html")
+    return FileResponse("https://cuquest.onrender.com")
 
 
 @app.get("/health/db")
