@@ -784,9 +784,17 @@
 
 
         function handleSearch() {
-          fetch("https://cuquest.onrender.com/search?q=" + encodeURIComponent(searchQuery))
-            .then(function(r) { return r.json(); })
-            .then(function(data) { setSearchResults(data); });
+            if (!searchQuery.trim()) {
+                setSearchResults(null);
+                return;
+            }
+            const q = searchQuery.toLowerCase();
+            const matchedPosts = posts.filter(function(p) {
+                return p.title.toLowerCase().includes(q) ||
+                       p.description.toLowerCase().includes(q) ||
+                       p.category_name.toLowerCase().includes(q);
+            });
+            setSearchResults({ posts: matchedPosts });
         }
         
         function handleLogout() {
@@ -1018,22 +1026,16 @@
 
             {searchResults && !showProfile && (
                 <div style={{padding: "16px", borderBottom: "1px solid #eee"}}>
-                    {searchResults.posts.map(function(p) {
-                        return <div key={p.post_id} style={{padding: "8px 0", borderBottom: "1px solid #eee"}}>
-                            <strong>{p.title}</strong> — {p.category_name}
-                            <p style={{margin: "4px 0 0", fontSize: "14px", color: "#666"}}>{p.description}</p>
-                        </div>;
-                    })}
-                    {searchResults.users.map(function(u) {
-                        return <div key={u.user_id} style={{padding: "8px 0", borderBottom: "1px solid #eee"}}>
-                            {u.first_name} {u.last_name} — {u.email}
-                        </div>;
-                    })}
-                    {searchResults.categories.map(function(c) {
-                        return <div key={c.category_id} style={{padding: "8px 0", borderBottom: "1px solid #eee"}}>
-                            {c.name}
-                        </div>;
-                    })}
+                    {searchResults.posts.length === 0 ? (
+                        <p style={{color: "#888"}}>No results found.</p>
+                    ) : (
+                        searchResults.posts.map(function(p) {
+                            return <div key={p.post_id} style={{padding: "8px 0", borderBottom: "1px solid #eee"}}>
+                                <strong>{p.title}</strong> — {p.category_name}
+                                <p style={{margin: "4px 0 0", fontSize: "14px", color: "#666"}}>{p.description}</p>
+                            </div>;
+                        })
+                    )}
                 </div>
             )}
         
