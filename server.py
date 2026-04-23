@@ -654,7 +654,7 @@ db = AppDB()
 
 @app.get("/")
 def root():
-    return FileResponse{"index.html"}
+    return FileResponse("index.html")
 
 
 @app.get("/health/db")
