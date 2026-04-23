@@ -920,8 +920,7 @@
 
         function handleSendMessage() {
           if (!newMsg.trim()) return;
-          fetch("https://cuquest.onrender.com
-                /messages", {
+          fetch("https://cuquest.onrender.com/messages", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: token, receiver_user_id: activeConversation.other_user_id, content: newMsg.trim() }),
