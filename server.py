@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import (
@@ -18,17 +19,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
+
 from typing import Optional
 import hashlib
 import uuid
-
-
-
 
 from database import engine, test_connection
 
 schema_name = "third_iteration"
 metadata = MetaData(schema=schema_name)
+
 
 users_table = Table("users", metadata, autoload_with=engine)
 domains_table = Table("domains", metadata, autoload_with=engine)
@@ -51,7 +51,7 @@ sessions_table = Table(
 )
 
 metadata.create_all(engine, tables=[sessions_table])
-
+app.mount("/static", StaticFiles(directory="."), name="static")
 
 class UserCreate(BaseModel):
     email: EmailStr
