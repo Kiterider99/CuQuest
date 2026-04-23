@@ -697,7 +697,7 @@
 
         React.useEffect(function () {
           if (!user) return;
-          fetch("https://cuquest.onrender.com:8000/domains")
+          fetch("https://cuquest.onrender.com/domains")
             .then(function (r) { return r.json(); })
             .then(function (data) { setDomains(data.domains || []); });
         }, [user]);
