@@ -51,7 +51,6 @@ sessions_table = Table(
 )
 
 metadata.create_all(engine, tables=[sessions_table])
-app.mount("/static", StaticFiles(directory="."), name="static")
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -641,6 +640,7 @@ class AppDB:
 
 
 app = FastAPI(title="StudentQuest API")
+app.mount("/static", StaticFiles(directory="."), name="static")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
