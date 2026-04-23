@@ -657,6 +657,8 @@
         const [posts, setPosts] = React.useState([]);
 
         const [showProfile, setShowProfile] = React.useState(false);
+        const [searchQuery, setSearchQuery] = React.useState("");
+        const [searchResults, setSearchResults] = React.useState(null);
         const [userPosts, setUserPosts] = React.useState([]);
 
         const [activeCall, setActiveCall] = React.useState(null);
@@ -779,6 +781,14 @@
             });
         }
 
+
+
+        function handleSearch() {
+          fetch("https://cuquest.onrender.com/search?q=" + encodeURIComponent(searchQuery))
+            .then(function(r) { return r.json(); })
+            .then(function(data) { setSearchResults(data); });
+        }
+        
         function handleLogout() {
           fetch("https://cuquest.onrender.com/logout", {
             method: "POST",
@@ -967,6 +977,24 @@
                 />
                 Student Quest
               </h1>
+              {user && !showProfile && selectedDomain ? (
+                <div style={{display: "flex", alignItems: "center", gap: "8px", flex: 1, maxWidth: "400px", margin: "0 24px"}}>
+                  <input
+                    type="text"
+                    placeholder="Search posts, users, categories..."
+                    value={searchQuery}
+                    onChange={function(e) { setSearchQuery(e.target.value); setSearchResults(null); }}
+                    onKeyDown={function(e) { if (e.key === "Enter") handleSearch(); }}
+                    style={{flex: 1, padding: "8px 12px", fontSize: "14px", borderRadius: "6px", border: "1px solid #ddd", height: "36px", boxSizing: "border-box"}}
+                  />
+                  <button
+                    onClick={handleSearch}
+                    style={{padding: "8px 16px", height: "36px", fontSize: "14px", borderRadius: "6px", border: "1px solid #ddd", cursor: "pointer"}}
+                  >
+                    Search
+                  </button>
+                </div>
+              ) : null}
               {user ? (
                 <div className="header-actions">
                   <button
@@ -988,6 +1016,27 @@
               ) : null}
             </header>
 
+            {searchResults && !showProfile && (
+                <div style={{padding: "16px", borderBottom: "1px solid #eee"}}>
+                    {searchResults.posts.map(function(p) {
+                        return <div key={p.post_id} style={{padding: "8px 0", borderBottom: "1px solid #eee"}}>
+                            <strong>{p.title}</strong> — {p.category_name}
+                            <p style={{margin: "4px 0 0", fontSize: "14px", color: "#666"}}>{p.description}</p>
+                        </div>;
+                    })}
+                    {searchResults.users.map(function(u) {
+                        return <div key={u.user_id} style={{padding: "8px 0", borderBottom: "1px solid #eee"}}>
+                            {u.first_name} {u.last_name} — {u.email}
+                        </div>;
+                    })}
+                    {searchResults.categories.map(function(c) {
+                        return <div key={c.category_id} style={{padding: "8px 0", borderBottom: "1px solid #eee"}}>
+                            {c.name}
+                        </div>;
+                    })}
+                </div>
+            )}
+        
             {user ? (
               <div className="page-content">
 
