@@ -17,6 +17,7 @@ from sqlalchemy import (
     delete,
     func,
     text,
+    case,
 )
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
@@ -656,6 +657,87 @@ app.add_middleware(
 
 db = AppDB()
 
+def search(self, query: str):
+        clean_query = (query or "").strip().lower()
+        if clean_query == "":
+            return {"posts": [], "users": [], "categories": []}
+ 
+        q = f"%{clean_query}%"
+ 
+        post_relevance = (
+            case((func.lower(posts_table.c.title).like(q), 3), else_=0) +
+            case((func.lower(posts_table.c.description).like(q), 2), else_=0) +
+            case((func.lower(categories_table.c.name).like(q), 1), else_=0)
+        ).label("relevance")
+ 
+        user_relevance = (
+            case((func.lower(users_table.c.first_name) == clean_query, 3), else_=0) +
+            case((func.lower(users_table.c.last_name) == clean_query, 3), else_=0) +
+            case((func.lower(users_table.c.first_name).like(q), 1), else_=0) +
+            case((func.lower(users_table.c.last_name).like(q), 1), else_=0) +
+            case((func.lower(users_table.c.email).like(q), 1), else_=0)
+        ).label("relevance")
+ 
+        cat_relevance = (
+            case((func.lower(categories_table.c.name) == clean_query, 2), else_=1)
+        ).label("relevance")
+ 
+        with self.engine.connect() as conn:
+            post_rows = conn.execute(
+                select(posts_table.c.post_id, post_relevance)
+                .select_from(
+                    posts_table.join(
+                        categories_table,
+                        posts_table.c.category_id == categories_table.c.category_id,
+                    )
+                )
+                .where(
+                    func.lower(posts_table.c.title).like(q) |
+                    func.lower(posts_table.c.description).like(q) |
+                    func.lower(categories_table.c.name).like(q)
+                )
+                .order_by(
+                    post_relevance.desc(),
+                    posts_table.c.created_at.desc(),
+                    posts_table.c.post_id.desc(),
+                )
+                .limit(10)
+            ).fetchall()
+ 
+            user_rows = conn.execute(
+                select(users_table, user_relevance)
+                .where(
+                    func.lower(users_table.c.first_name).like(q) |
+                    func.lower(users_table.c.last_name).like(q) |
+                    func.lower(users_table.c.email).like(q)
+                )
+                .order_by(user_relevance.desc(), users_table.c.user_id.desc())
+                .limit(10)
+            ).fetchall()
+ 
+            category_rows = conn.execute(
+                select(categories_table, cat_relevance)
+                .where(func.lower(categories_table.c.name).like(q))
+                .order_by(cat_relevance.desc(), categories_table.c.category_id.asc())
+                .limit(10)
+            ).fetchall()
+ 
+        posts = [self.get_post_details(row.post_id) for row in post_rows]
+        users = [self.user_to_dict(row) for row in user_rows]
+        categories = [
+            {
+                "category_id": row.category_id,
+                "domain_id": row.domain_id,
+                "name": row.name,
+            }
+            for row in category_rows
+        ]
+ 
+        return {
+            "posts": posts,
+            "users": users,
+            "categories": categories,
+        }
 
 @app.get("/")
 def root():
@@ -762,6 +844,10 @@ def get_user_posts(user_id: int):
 
 class DeletePostRequest(BaseModel):
     token: str
+
+@app.get("/search")
+def search(q: str):
+    return db.search(q)
 
 @app.delete("/posts/{post_id}")
 def delete_post(post_id: int, payload: DeletePostRequest):
