@@ -283,6 +283,29 @@
         font-weight: 600;
       }
 
+      .like-button {
+        background: none;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        color: #555;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .like-button:hover {
+        border-color: #e0245e;
+        color: #e0245e;
+      }
+      .like-button.liked {
+        background: #fde8ef;
+        border-color: #e0245e;
+        color: #e0245e;
+        font-weight: 600;
+      }
+      
       .posts-area h3 {
         margin: 0 0 12px 0;
         font-size: 1rem;
@@ -655,6 +678,7 @@
         const [categories, setCategories] = React.useState([]);
         const [selectedCategory, setSelectedCategory] = React.useState(null);
         const [posts, setPosts] = React.useState([]);
+        const [likedPosts, setLikedPosts] = React.useState({});
 
         const [showProfile, setShowProfile] = React.useState(false);
         const [searchQuery, setSearchQuery] = React.useState("");
@@ -795,6 +819,22 @@
                        p.category_name.toLowerCase().includes(q);
             });
             setSearchResults({ posts: matchedPosts });
+        }
+
+        function handleToggleLike(post_id) {
+            fetch("https://cuquest.onrender.com/posts/" + post_id + "/like", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: token })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                setLikedPosts(function(prev) {
+                    var updated = Object.assign({}, prev);
+                    updated[post_id] = data.liked;
+                    return updated;
+                });
+            });
         }
         
         function handleLogout() {
