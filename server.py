@@ -739,6 +739,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount("/static", StaticFiles(directory="."), name="static")
+
 db = AppDB()
 
 @app.get("/")
