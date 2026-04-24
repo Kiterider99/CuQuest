@@ -1268,6 +1268,16 @@
                                       Message
                                     </button>
                                   ) : null}
+
+                                  {post.creator_user_id !== user.user_id ? (
+                                      <button
+                                        className={"like-button" + (likedPosts[post.post_id] ? " liked" : "")}
+                                        onClick={function() { handleToggleLike(post.post_id); }}
+                                      >
+                                        {likedPosts[post.post_id] ? "♥ Liked" : "♡ Like"}
+                                      </button>
+                                    ) : null}
+                      
                                 </article>
                               );
                             })}
