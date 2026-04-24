@@ -657,7 +657,7 @@ app.add_middleware(
 
 db = AppDB()
 
-def search(self, query: str):
+    def search(self, query: str):
         clean_query = (query or "").strip().lower()
         if clean_query == "":
             return {"posts": [], "users": [], "categories": []}
