@@ -1020,18 +1020,19 @@
                 Student Quest
               </h1>
 
-                {/* Search bar  */}
-              <div style={{display: "flex", alignItems: "center", gap: "8px", flex: 1, maxWidth: "400px", margin: "0 24px"}}>
-                  <input
-                      type="text"
-                      placeholder="Search posts, users, categories..."
-                      value={searchQuery}
-                      onChange={function(e) { setSearchQuery(e.target.value); setSearchResults(null); }}
-                      onKeyDown={function(e) { if (e.key === "Enter") handleSearch(); }}
-                      style={{flex: 1, padding: "8px 12px", fontSize: "14px", borderRadius: "6px", border: "1px solid #ddd", height: "36px", boxSizing: "border-box"}}
-                  />
-              
-              </div>
+              {/* Search bar  */}
+              {selectedDomain && !showProfile && !showMessages ? (
+                  <div style={{display: "flex", alignItems: "center", gap: "8px", flex: 1, maxWidth: "400px", margin: "0 24px"}}>
+                      <input
+                          type="text"
+                          placeholder="Search posts, users, categories..."
+                          value={searchQuery}
+                          onChange={function(e) { setSearchQuery(e.target.value); setSearchResults(null); }}
+                          onKeyDown={function(e) { if (e.key === "Enter") handleSearch(); }}
+                          style={{flex: 1, padding: "8px 12px", fontSize: "14px", borderRadius: "6px", border: "1px solid #ddd", height: "36px", boxSizing: "border-box"}}
+                      />
+                  </div>
+              ) : null}
               
               {user ? (
                 <div className="header-actions">
