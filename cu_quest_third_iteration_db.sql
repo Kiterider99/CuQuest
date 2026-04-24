@@ -23,7 +23,12 @@ SET search_path TO third_iteration;
 DROP TYPE IF EXISTS request_status CASCADE;
 CREATE TYPE request_status AS ENUM ('open', 'pending', 'closed', 'expired');
 
-
+CREATE TABLE IF NOT EXISTS likes (
+    like_id BIGSERIAL PRIMARY KEY,
+    post_id BIGINT NOT NULL REFERENCES posts(post_id) ON DELETE CASCADE,
+    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT likes_unique UNIQUE (post_id, user_id)
+);
 
 CREATE TABLE IF NOT EXISTS users(
 	user_id BIGSERIAL PRIMARY KEY,
