@@ -1,7 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import (
     Column,
@@ -11,6 +9,7 @@ from sqlalchemy import (
     String,
     Table,
     Boolean,
+    UniqueConstraint,
     select,
     insert,
     delete,
@@ -19,16 +18,17 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timezone
-
 from typing import Optional
 import hashlib
 import uuid
+
+
+
 
 from database import engine, test_connection
 
 schema_name = "third_iteration"
 metadata = MetaData(schema=schema_name)
-
 
 users_table = Table("users", metadata, autoload_with=engine)
 domains_table = Table("domains", metadata, autoload_with=engine)
@@ -38,13 +38,7 @@ post_images_table = Table("post_images", metadata, autoload_with=engine)
 messages_table = Table("messages", metadata, autoload_with=engine)
 ratings_table = Table("ratings", metadata, autoload_with=engine)
 
-likes_table = Table(
-    "likes",
-    metadata,
-    Column("like_id", Integer, primary_key=True),
-    Column("post_id", Integer, nullable=False),
-    Column("user_id", Integer, nullable=False),
-)
+
 
 sessions_table = Table(
     "sessions",
@@ -56,7 +50,19 @@ sessions_table = Table(
     extend_existing=True,
 )
 
-metadata.create_all(engine, tables=[sessions_table])
+post_likes_table = Table(
+    "post_likes",
+    metadata,
+    Column("like_id", Integer, primary_key=True),
+    Column("post_id", Integer, nullable=False),
+    Column("user_id", Integer, nullable=False),
+    Column("created_at", String, nullable=False),
+    UniqueConstraint("post_id", "user_id", name="uq_post_likes_post_user"),
+    extend_existing=True,
+)
+
+metadata.create_all(engine, tables=[sessions_table, post_likes_table])
+
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -80,8 +86,6 @@ class CreatePostRequest(BaseModel):
     desired_payout: Optional[float] = None
     expires_at: Optional[str] = None
 
-class LikeRequest(BaseModel):
-    token: str
 
 class AddImageRequest(BaseModel):
     token: str
@@ -92,7 +96,6 @@ class MessageCreate(BaseModel):
     token: str
     receiver_user_id: int
     content: str
-    request_id: Optional[int] = None
 
 
 class RatingCreate(BaseModel):
@@ -101,6 +104,10 @@ class RatingCreate(BaseModel):
     rated_user_id: int
     score: int
     comment: Optional[str] = None
+
+
+class LikeRequest(BaseModel):
+    token: str
 
 
 
@@ -287,7 +294,7 @@ class AppDB:
             for row in rows
         ]
 
-    def get_post_details(self, post_id):
+    def get_post_details(self, post_id, user_id=None):
         with self.engine.connect() as conn:
             row = conn.execute(
                 select(
@@ -314,8 +321,21 @@ class AppDB:
                 )
                 .where(posts_table.c.post_id == post_id)
             ).fetchone()
-        if row is None:
-            return None
+            if row is None:
+                return None
+            like_count = conn.execute(
+                select(func.count()).select_from(post_likes_table).where(
+                    post_likes_table.c.post_id == post_id
+                )
+            ).scalar_one()
+            user_has_liked = False
+            if user_id is not None:
+                user_has_liked = conn.execute(
+                    select(post_likes_table.c.like_id).where(
+                        (post_likes_table.c.post_id == post_id) &
+                        (post_likes_table.c.user_id == user_id)
+                    )
+                ).fetchone() is not None
         return {
             "post_id": row.post_id,
             "creator_user_id": row.creator_user_id,
@@ -332,10 +352,12 @@ class AppDB:
             "status": row.status,
             "created_at": row.created_at,
             "expires_at": row.expires_at,
+            "like_count": like_count,
+            "user_has_liked": user_has_liked,
             "images": self.get_post_images(row.post_id),
         }
 
-    def get_user_posts(self, user_id):
+    def get_user_posts(self, user_id, viewer_user_id=None):
         query = select(posts_table.c.post_id).where(
             posts_table.c.creator_user_id == user_id
         ).order_by(
@@ -344,9 +366,9 @@ class AppDB:
         )
         with self.engine.connect() as conn:
             rows = conn.execute(query).fetchall()
-        return [self.get_post_details(row.post_id) for row in rows]
+        return [self.get_post_details(row.post_id, user_id=viewer_user_id) for row in rows]
 
-    def list_posts(self, category_id=None,domain_id=None):
+    def list_posts(self, category_id=None, domain_id=None, user_id=None):
         query = (select(posts_table.c.post_id).select_from(
             posts_table.join(
                 categories_table,
@@ -363,7 +385,7 @@ class AppDB:
             query = query.where(posts_table.c.category_id == category_id)
         with self.engine.connect() as conn:
             rows = conn.execute(query).fetchall()
-        return [self.get_post_details(row.post_id) for row in rows]
+        return [self.get_post_details(row.post_id, user_id=user_id) for row in rows]
 
     def create_post(self, payload):
         user, error = self.require_user(payload.token)
@@ -440,8 +462,6 @@ class AppDB:
         receiver = self.get_user_by_id(payload.receiver_user_id)
         if receiver is None:
             return {"error": "Receiver not found."}
-        if payload.request_id is not None and self.get_post_row(payload.request_id) is None:
-            return {"error": "Referenced post was not found."}
 
         sent_at = self.now_iso()
         with self.engine.begin() as conn:
@@ -449,10 +469,8 @@ class AppDB:
                 insert(messages_table).values(
                     sender_user_id=sender["user_id"],
                     receiver_user_id=payload.receiver_user_id,
-                    request_id=payload.request_id,
                     content=payload.content.strip(),
                     sent_at=sent_at,
-                    is_read=False,
                 )
             )
             message_id = result.inserted_primary_key[0]
@@ -463,10 +481,8 @@ class AppDB:
                 "message_id": message_id,
                 "sender_user_id": sender["user_id"],
                 "receiver_user_id": payload.receiver_user_id,
-                "request_id": payload.request_id,
                 "content": payload.content.strip(),
                 "sent_at": sent_at,
-                "is_read": False,
             },
         }
 
@@ -499,7 +515,6 @@ class AppDB:
                         "receiver_user_id": row.receiver_user_id,
                         "content": row.content,
                         "sent_at": row.sent_at,
-                        "is_read": bool(row.is_read),
                     }
                     for row in rows
                 ]
@@ -548,27 +563,42 @@ class AppDB:
         user, error = self.require_user(token)
         if error is not None:
             return error
+        if self.get_post_row(post_id) is None:
+            return {"error": "Post not found."}
+        uid = user["user_id"]
         with self.engine.connect() as conn:
             existing = conn.execute(
-                select(likes_table).where(
-                    likes_table.c.post_id == post_id,
-                    likes_table.c.user_id == user["user_id"]
+                select(post_likes_table.c.like_id).where(
+                    (post_likes_table.c.post_id == post_id) &
+                    (post_likes_table.c.user_id == uid)
                 )
             ).fetchone()
-            if existing:
-                conn.execute(delete(likes_table).where(
-                    likes_table.c.post_id == post_id,
-                    likes_table.c.user_id == user["user_id"]
-                ))
-                conn.commit()
-                return {"liked": False}
-            else:
-                conn.execute(insert(likes_table).values(
-                    post_id=post_id,
-                    user_id=user["user_id"]
-                ))
-                conn.commit()
-                return {"liked": True}
+        if existing:
+            with self.engine.begin() as conn:
+                conn.execute(
+                    delete(post_likes_table).where(
+                        (post_likes_table.c.post_id == post_id) &
+                        (post_likes_table.c.user_id == uid)
+                    )
+                )
+            liked = False
+        else:
+            with self.engine.begin() as conn:
+                conn.execute(
+                    insert(post_likes_table).values(
+                        post_id=post_id,
+                        user_id=uid,
+                        created_at=self.now_iso(),
+                    )
+                )
+            liked = True
+        with self.engine.connect() as conn:
+            like_count = conn.execute(
+                select(func.count()).select_from(post_likes_table).where(
+                    post_likes_table.c.post_id == post_id
+                )
+            ).scalar_one()
+        return {"liked": liked, "like_count": like_count}
 
     def create_rating(self, payload):
         rater, error = self.require_user(payload.token)
@@ -612,69 +642,8 @@ class AppDB:
             },
         }
 
-    def search(self, query: str):
-        clean_query = (query or "").strip().lower()
-        if clean_query == "":
-            return {"posts": [], "users": [], "categories": []}
-
-        q = f"%{clean_query}%"
-
-        with self.engine.connect() as conn:
-            post_rows = conn.execute(
-                select(posts_table.c.post_id)
-                .select_from(
-                    posts_table.join(
-                        categories_table,
-                        posts_table.c.category_id == categories_table.c.category_id,
-                    )
-                )
-                .where(
-                    func.lower(posts_table.c.title).like(q) |
-                    func.lower(posts_table.c.description).like(q) |
-                    func.lower(categories_table.c.name).like(q)
-                )
-                .order_by(posts_table.c.created_at.desc(), posts_table.c.post_id.desc())
-                .limit(10)
-            ).fetchall()
-
-            user_rows = conn.execute(
-                select(users_table)
-                .where(
-                    func.lower(users_table.c.first_name).like(q) |
-                    func.lower(users_table.c.last_name).like(q) |
-                    func.lower(users_table.c.email).like(q)
-                )
-                .order_by(users_table.c.user_id.desc())
-                .limit(10)
-            ).fetchall()
-
-            category_rows = conn.execute(
-                select(categories_table)
-                .where(func.lower(categories_table.c.name).like(q))
-                .order_by(categories_table.c.category_id.asc())
-                .limit(10)
-            ).fetchall()
-
-        posts = [self.get_post_details(row.post_id) for row in post_rows]
-        users = [self.user_to_dict(row) for row in user_rows]
-        categories = [
-            {
-                "category_id": row.category_id,
-                "domain_id": row.domain_id,
-                "name": row.name,
-            }
-            for row in category_rows
-        ]
-
-        return {
-            "posts": posts,
-            "users": users,
-            "categories": categories,
-        }
-
 
 app = FastAPI(title="StudentQuest API")
-app.mount("/static", StaticFiles(directory="."), name="static")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -688,7 +657,7 @@ db = AppDB()
 
 @app.get("/")
 def root():
-    return FileResponse("index.html")
+    return {"message": "StudentQuest backend is running."}
 
 
 @app.get("/health/db")
@@ -740,8 +709,13 @@ def list_categories(domain_id:int | None = None):
 
 
 @app.get("/posts")
-def list_posts(category_id: int | None = None, domain_id: int | None = None):
-    return {"posts": db.list_posts(category_id=category_id, domain_id=domain_id)}
+def list_posts(category_id: int | None = None, domain_id: int | None = None, token: str | None = None):
+    user_id = None
+    if token:
+        user = db.get_user_by_token(token)
+        if user:
+            user_id = user["user_id"]
+    return {"posts": db.list_posts(category_id=category_id, domain_id=domain_id, user_id=user_id)}
 
 
 @app.post("/posts")
@@ -752,6 +726,11 @@ def create_post(payload: CreatePostRequest):
 @app.post("/posts/{post_id}/images")
 def add_post_image(post_id: int, payload: AddImageRequest):
     return db.add_post_image(post_id, payload)
+
+
+@app.post("/posts/{post_id}/like")
+def toggle_like(post_id: int, payload: LikeRequest):
+    return db.toggle_like(post_id, payload.token)
 
 
 @app.post("/messages")
@@ -779,17 +758,8 @@ def get_user_posts(user_id: int):
     return {"posts": db.get_user_posts(user_id)}
 
 
-@app.get("/search")
-def search(q: str):
-    return db.search(q)
-
-
 class DeletePostRequest(BaseModel):
     token: str
-
-@app.post("/posts/{post_id}/like")
-def toggle_like(post_id: int, payload: LikeRequest):
-    return db.toggle_like(post_id, payload.token)
 
 @app.delete("/posts/{post_id}")
 def delete_post(post_id: int, payload: DeletePostRequest):

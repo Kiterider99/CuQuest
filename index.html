@@ -247,7 +247,7 @@
         display: flex;
         flex-direction: column;
         gap: 6px;
-        border: 2px solid #000
+        border: 2px solid #000;
       }
 
       .category-sidebar h3 {
@@ -264,12 +264,12 @@
         text-align: left;
         padding: 8px 10px;
         border-radius: 6px;
-        border: 1px solid #ddd;
-        background: #f5f5f5;
+        border: 1px solid transparent;
+        background: transparent;
         cursor: pointer;
         font: inherit;
         font-size: 0.9rem;
-        color: #111;
+        color: #444;
       }
 
       .cat-button:hover {
@@ -283,29 +283,6 @@
         font-weight: 600;
       }
 
-      .like-button {
-        background: none;
-        border: 1px solid #ccc;
-        border-radius: 20px;
-        padding: 4px 10px;
-        cursor: pointer;
-        font-size: 0.85rem;
-        color: #555;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-      }
-      .like-button:hover {
-        border-color: #e0245e;
-        color: #e0245e;
-      }
-      .like-button.liked {
-        background: #fde8ef;
-        border-color: #e0245e;
-        color: #e0245e;
-        font-weight: 600;
-      }
-      
       .posts-area h3 {
         margin: 0 0 12px 0;
         font-size: 1rem;
@@ -361,7 +338,7 @@
         flex-direction: column;
         gap: 10px;
         margin-bottom: 16px;
-        border: 2px solid #000
+        border: 2px solid #000;
       }
 
       .post-form input,
@@ -429,7 +406,7 @@
         gap: 6px;
         margin-top: 16px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.07);
-        border: 2px solid #000
+        border: 2px solid #000;
       }
 
       .profile-avatar {
@@ -575,7 +552,6 @@
         align-items: center;
         gap: 12px;
         padding: 16px 0 12px 0;
-        border-bottom: 1px solid #eee;
         margin-bottom: 12px;
         background: #e6e6e6;
         border: 2px solid #000;
@@ -646,6 +622,33 @@
       .message-input:focus {
         border-color: #111;
       }
+
+      /* ── Like button ── */
+      .like-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        background: #fff;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.88rem;
+        color: #666;
+        transition: border-color 0.15s, color 0.15s;
+      }
+
+      .like-button:hover {
+        border-color: #e05c5c;
+        color: #e05c5c;
+      }
+
+      .like-button.liked {
+        border-color: #e05c5c;
+        color: #e05c5c;
+        background: #fff5f5;
+      }
     </style>
   </head>
 
@@ -678,11 +681,8 @@
         const [categories, setCategories] = React.useState([]);
         const [selectedCategory, setSelectedCategory] = React.useState(null);
         const [posts, setPosts] = React.useState([]);
-        const [likedPosts, setLikedPosts] = React.useState({});
 
         const [showProfile, setShowProfile] = React.useState(false);
-        const [searchQuery, setSearchQuery] = React.useState("");
-        const [searchResults, setSearchResults] = React.useState(null);
         const [userPosts, setUserPosts] = React.useState([]);
 
         const [activeCall, setActiveCall] = React.useState(null);
@@ -708,7 +708,7 @@
         React.useEffect(function () {
           const savedToken = localStorage.getItem("studentquest_token");
           if (!savedToken) return;
-          fetch("https://cuquest.onrender.com/me?token=" + savedToken)
+          fetch("http://localhost:8000/me?token=" + savedToken)
             .then(function (r) { return r.json(); })
             .then(function (data) {
               if (data.error) {
@@ -723,7 +723,7 @@
 
         React.useEffect(function () {
           if (!user) return;
-          fetch("https://cuquest.onrender.com/domains")
+          fetch("http://localhost:8000/domains")
             .then(function (r) { return r.json(); })
             .then(function (data) { setDomains(data.domains || []); });
         }, [user]);
@@ -735,14 +735,14 @@
             setSelectedCategory(null);
             return;
           }
-          fetch("https://cuquest.onrender.com/categories?domain_id=" + selectedDomain.domain_id)
+          fetch("http://localhost:8000/categories?domain_id=" + selectedDomain.domain_id)
             .then(function (r) { return r.json(); })
             .then(function (data) { setCategories(data.categories || []); });
         }, [selectedDomain]);
 
         React.useEffect(function () {
           if (!selectedDomain) return;
-          var url = "https://cuquest.onrender.com/posts?domain_id=" + selectedDomain.domain_id;
+          var url = "http://localhost:8000/posts?domain_id=" + selectedDomain.domain_id + "&token=" + token;
           if (selectedCategory) url += "&category_id=" + selectedCategory.category_id;
           setLoadingPosts(true);
           fetch(url)
@@ -789,7 +789,7 @@
           const payload = mode === "login"
             ? { email: cleanEmail, password: formData.password }
             : { email: cleanEmail, password: formData.password, first_name: formData.first_name.trim(), last_name: formData.last_name.trim() };
-          fetch("https://cuquest.onrender.com/" + (mode === "login" ? "login" : "register"), {
+          fetch("http://localhost:8000/" + (mode === "login" ? "login" : "register"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -805,40 +805,8 @@
             });
         }
 
-
-
-        function handleSearch() {
-            if (!searchQuery.trim()) {
-                setSearchResults(null);
-                return;
-            }
-            const q = searchQuery.toLowerCase();
-            const matchedPosts = posts.filter(function(p) {
-                return p.title.toLowerCase().includes(q) ||
-                       p.description.toLowerCase().includes(q) ||
-                       p.category_name.toLowerCase().includes(q);
-            });
-            setSearchResults({ posts: matchedPosts });
-        }
-
-        function handleToggleLike(post_id) {
-            fetch("https://cuquest.onrender.com/posts/" + post_id + "/like", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ token: token })
-            })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                setLikedPosts(function(prev) {
-                    var updated = Object.assign({}, prev);
-                    updated[post_id] = data.liked;
-                    return updated;
-                });
-            });
-        }
-        
         function handleLogout() {
-          fetch("https://cuquest.onrender.com/logout", {
+          fetch("http://localhost:8000/logout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: token }),
@@ -862,7 +830,7 @@
 
         function handleOpenProfile() {
           setLoadingProfile(true);
-          fetch("https://cuquest.onrender.com/users/" + user.user_id + "/posts")
+          fetch("http://localhost:8000/users/" + user.user_id + "/posts")
             .then(function (r) { return r.json(); })
             .then(function (data) { setUserPosts(data.posts || []); setLoadingProfile(false); })
             .catch(function () { setUserPosts([]); setLoadingProfile(false); });
@@ -870,7 +838,7 @@
           setShowProfile(true);
         }
 
-        function goHome() {        // New Addition (4/14)
+        function goHome() {
           setSelectedDomain(null);
           setSelectedCategory(null);
           setShowProfile(false);
@@ -886,7 +854,7 @@
         }
 
         function handleDeletePost(post_id, onSuccess) {
-          fetch("https://cuquest.onrender.com/posts/" + post_id, {
+          fetch("http://localhost:8000/posts/" + post_id, {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: token }),
@@ -920,7 +888,7 @@
             desired_payout: createPostData.desired_payout !== "" ? parseFloat(createPostData.desired_payout) : null,
             expires_at: createPostData.expires_at !== "" ? new Date(createPostData.expires_at).toISOString() : null,
           };
-          fetch("https://cuquest.onrender.com/posts", {
+          fetch("http://localhost:8000/posts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -944,7 +912,7 @@
 
         function handleOpenMessages() {
           setLoadingMessages(true);
-          fetch("https://cuquest.onrender.com/messages?token=" + token)
+          fetch("http://localhost:8000/messages?token=" + token)
             .then(function (r) { return r.json(); })
             .then(function (data) { setConversations(data.conversations || []); setLoadingMessages(false); })
             .catch(function () { setConversations([]); setLoadingMessages(false); });
@@ -955,7 +923,7 @@
         }
 
         function handleOpenThread(convo) {
-          fetch("https://cuquest.onrender.com/messages/thread?token=" + token + "&other_user_id=" + convo.other_user_id)
+          fetch("http://localhost:8000/messages/thread?token=" + token + "&other_user_id=" + convo.other_user_id)
             .then(function (r) { return r.json(); })
             .then(function (data) { setThread(data.thread || []); });
           setActiveConversation(convo);
@@ -967,7 +935,7 @@
             first_name: post.creator_first_name,
             last_name: post.creator_last_name,
           };
-          fetch("https://cuquest.onrender.com/messages/thread?token=" + token + "&other_user_id=" + post.creator_user_id)
+          fetch("http://localhost:8000/messages/thread?token=" + token + "&other_user_id=" + post.creator_user_id)
             .then(function (r) { return r.json(); })
             .then(function (data) { setThread(data.thread || []); });
           setShowProfile(false);
@@ -978,7 +946,7 @@
 
         function handleSendMessage() {
           if (!newMsg.trim()) return;
-          fetch("https://cuquest.onrender.com/messages", {
+          fetch("http://localhost:8000/messages", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: token, receiver_user_id: activeConversation.other_user_id, content: newMsg.trim() }),
@@ -988,6 +956,24 @@
               if (data.error) { alert(data.error); return; }
               setNewMsg("");
               handleOpenThread(activeConversation);
+            });
+        }
+
+        function handleLikePost(post_id) {
+          fetch("http://localhost:8000/posts/" + post_id + "/like", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: token }),
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+              if (data.error) return;
+              setPosts(function (prev) {
+                return prev.map(function (p) {
+                  if (p.post_id !== post_id) return p;
+                  return { ...p, like_count: data.like_count, user_has_liked: data.liked };
+                });
+              });
             });
         }
 
@@ -1010,8 +996,8 @@
             {/* Header */}
             <header className="app-header">
               <h1 className="app-title">
-                <img                      // New Addition (4/14)
-                  src="/static/logo.jpeg"
+                <img
+                  src="logo.jpeg"
                   alt="SQ logo"
                   onClick={goHome}
                   style={{
@@ -1025,24 +1011,6 @@
                 />
                 Student Quest
               </h1>
-              {user && !showProfile && selectedDomain ? (
-                <div style={{display: "flex", alignItems: "center", gap: "8px", flex: 1, maxWidth: "400px", margin: "0 24px"}}>
-                  <input
-                    type="text"
-                    placeholder="Search posts, users, categories..."
-                    value={searchQuery}
-                    onChange={function(e) { setSearchQuery(e.target.value); setSearchResults(null); }}
-                    onKeyDown={function(e) { if (e.key === "Enter") handleSearch(); }}
-                    style={{flex: 1, padding: "8px 12px", fontSize: "14px", borderRadius: "6px", border: "1px solid #ddd", height: "36px", boxSizing: "border-box"}}
-                  />
-                  <button
-                    onClick={handleSearch}
-                    style={{padding: "8px 16px", height: "36px", fontSize: "14px", borderRadius: "6px", border: "1px solid #ddd", cursor: "pointer"}}
-                  >
-                    Search
-                  </button>
-                </div>
-              ) : null}
               {user ? (
                 <div className="header-actions">
                   <button
@@ -1064,21 +1032,6 @@
               ) : null}
             </header>
 
-            {searchResults && !showProfile && (
-                <div style={{padding: "16px", borderBottom: "1px solid #eee"}}>
-                    {searchResults.posts.length === 0 ? (
-                        <p style={{color: "#888"}}>No results found.</p>
-                    ) : (
-                        searchResults.posts.map(function(p) {
-                            return <div key={p.post_id} style={{padding: "8px 0", borderBottom: "1px solid #eee"}}>
-                                <strong>{p.title}</strong> — {p.category_name}
-                                <p style={{margin: "4px 0 0", fontSize: "14px", color: "#666"}}>{p.description}</p>
-                            </div>;
-                        })
-                    )}
-                </div>
-            )}
-        
             {user ? (
               <div className="page-content">
 
@@ -1260,6 +1213,12 @@
                                       Delete
                                     </button>
                                   ) : null}
+                                  <button
+                                    className={"like-button" + (post.user_has_liked ? " liked" : "")}
+                                    onClick={function () { handleLikePost(post.post_id); }}
+                                  >
+                                    {post.user_has_liked ? "♥" : "♡"} {post.like_count || 0}
+                                  </button>
                                   {post.creator_user_id !== user.user_id ? (
                                     <button
                                       className="mode-button"
@@ -1268,16 +1227,6 @@
                                       Message
                                     </button>
                                   ) : null}
-
-                                  {post.creator_user_id !== user.user_id ? (
-                                      <button
-                                        className={"like-button" + (likedPosts[post.post_id] ? " liked" : "")}
-                                        onClick={function() { handleToggleLike(post.post_id); }}
-                                      >
-                                        {likedPosts[post.post_id] ? "♥ Liked" : "♡ Like"}
-                                      </button>
-                                    ) : null}
-                      
                                 </article>
                               );
                             })}
