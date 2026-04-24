@@ -544,7 +544,7 @@ class AppDB:
             conn.execute(delete(posts_table).where(posts_table.c.post_id == post_id))
         return {"success": True}
 
-     def toggle_like(self, post_id, token):
+    def toggle_like(self, post_id, token):
         user, error = self.require_user(token)
         if error is not None:
             return error
