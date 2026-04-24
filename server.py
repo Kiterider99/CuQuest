@@ -74,6 +74,8 @@ class CreatePostRequest(BaseModel):
     desired_payout: Optional[float] = None
     expires_at: Optional[str] = None
 
+class LikeRequest(BaseModel):
+    token: str
 
 class AddImageRequest(BaseModel):
     token: str
@@ -536,6 +538,30 @@ class AppDB:
             conn.execute(delete(posts_table).where(posts_table.c.post_id == post_id))
         return {"success": True}
 
+    def toggle_like(self, post_id, token):
+        user = self.require_user(token)
+        with self.engine.connect() as conn:
+            existing = conn.execute(
+                select(likes_table).where(
+                    likes_table.c.post_id == post_id,
+                    likes_table.c.user_id == user["user_id"]
+                )
+            ).fetchone()
+            if existing:
+                conn.execute(delete(likes_table).where(
+                    likes_table.c.post_id == post_id,
+                    likes_table.c.user_id == user["user_id"]
+                ))
+                conn.commit()
+                return {"liked": False}
+            else:
+                conn.execute(insert(likes_table).values(
+                    post_id=post_id,
+                    user_id=user["user_id"]
+                ))
+                conn.commit()
+                return {"liked": True}
+
     def create_rating(self, payload):
         rater, error = self.require_user(payload.token)
         if error is not None:
@@ -752,6 +778,10 @@ def search(q: str):
 
 class DeletePostRequest(BaseModel):
     token: str
+
+@app.post("/posts/{post_id}/like")
+def toggle_like(post_id: int, payload: LikeRequest):
+    return db.toggle_like(post_id, payload.token)
 
 @app.delete("/posts/{post_id}")
 def delete_post(post_id: int, payload: DeletePostRequest):
