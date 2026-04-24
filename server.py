@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import (
     Column,
@@ -657,7 +659,7 @@ db = AppDB()
 
 @app.get("/")
 def root():
-    return {"message": "StudentQuest backend is running."}
+    return FileResponse("index.html")
 
 
 @app.get("/health/db")
