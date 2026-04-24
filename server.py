@@ -38,7 +38,13 @@ post_images_table = Table("post_images", metadata, autoload_with=engine)
 messages_table = Table("messages", metadata, autoload_with=engine)
 ratings_table = Table("ratings", metadata, autoload_with=engine)
 
-
+likes_table = Table(
+    "likes",
+    metadata,
+    Column("like_id", Integer, primary_key=True),
+    Column("post_id", Integer, nullable=False),
+    Column("user_id", Integer, nullable=False),
+)
 
 sessions_table = Table(
     "sessions",
