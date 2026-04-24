@@ -943,7 +943,7 @@
             first_name: post.creator_first_name,
             last_name: post.creator_last_name,
           };
-          fetch("https://cuquest.onrender.com0/messages/thread?token=" + token + "&other_user_id=" + post.creator_user_id)
+          fetch("https://cuquest.onrender.com/messages/thread?token=" + token + "&other_user_id=" + post.creator_user_id)
             .then(function (r) { return r.json(); })
             .then(function (data) { setThread(data.thread || []); });
           setShowProfile(false);
